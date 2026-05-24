@@ -105,9 +105,19 @@ export function SetlistDetail() {
         <button className="btn-ghost" onClick={() => navigate("/gigg/setlists")}>
           ← Back
         </button>
-        <button className="btn-ghost text-red-300 hover:bg-red-950/40" onClick={removeSetlist}>
-          Delete setlist
-        </button>
+        <div className="flex gap-2">
+          {songs.length > 0 && (
+            <button
+              className="btn-primary"
+              onClick={() => navigate(`/gigg/setlists/${id}/play`)}
+            >
+              ▶ Play
+            </button>
+          )}
+          <button className="btn-ghost text-red-300 hover:bg-red-950/40" onClick={removeSetlist}>
+            Delete setlist
+          </button>
+        </div>
       </div>
       <h2 className="text-xl font-semibold">{setlist.name}</h2>
 

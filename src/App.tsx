@@ -8,6 +8,7 @@ import { SongEditor } from "./routes/gigg/SongEditor";
 import { SongView } from "./routes/gigg/SongView";
 import { Setlists } from "./routes/gigg/Setlists";
 import { SetlistDetail } from "./routes/gigg/SetlistDetail";
+import { SetlistPlay } from "./routes/gigg/SetlistPlay";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="songs/:id/edit" element={<SongEditor />} />
           <Route path="setlists" element={<Setlists />} />
           <Route path="setlists/:id" element={<SetlistDetail />} />
+          <Route path="setlists/:id/play" element={<SetlistPlay />} />
         </Route>
         <Route path="*" element={<div className="p-8 text-neutral-400">Not found.</div>} />
       </Route>

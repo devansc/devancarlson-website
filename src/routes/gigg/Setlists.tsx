@@ -24,6 +24,33 @@ export function Setlists() {
     })();
   }, [user]);
 
+  const duplicate = async (sl: Setlist) => {
+    if (!user) return;
+    const { data: newSl, error: slErr } = await supabase
+      .from("setlists")
+      .insert({ user_id: user.id, name: `${sl.name} (copy)` })
+      .select("*")
+      .single();
+    if (slErr || !newSl) {
+      setError(slErr?.message ?? "Failed to duplicate");
+      return;
+    }
+    const { data: existing } = await supabase
+      .from("setlist_songs")
+      .select("song_id, position")
+      .eq("setlist_id", sl.id);
+    if (existing && existing.length > 0) {
+      await supabase.from("setlist_songs").insert(
+        existing.map((row) => ({
+          setlist_id: newSl.id,
+          song_id: row.song_id,
+          position: row.position,
+        })),
+      );
+    }
+    setSetlists((s) => [newSl, ...s]);
+  };
+
   const create = async () => {
     if (!name.trim() || !user) return;
     const { data, error } = await supabase
@@ -66,13 +93,19 @@ export function Setlists() {
       ) : (
         <ul className="space-y-2">
           {setlists.map((sl) => (
-            <li key={sl.id}>
-              <Link to={`/gigg/setlists/${sl.id}`} className="card block hover:border-neutral-700">
+            <li key={sl.id} className="card flex items-center justify-between gap-2">
+              <Link to={`/gigg/setlists/${sl.id}`} className="flex-1 hover:opacity-80">
                 <div className="font-medium">{sl.name}</div>
                 <div className="text-xs text-neutral-500">
                   Created {new Date(sl.created_at).toLocaleDateString()}
                 </div>
               </Link>
+              <button
+                className="btn-ghost text-sm shrink-0"
+                onClick={() => duplicate(sl)}
+              >
+                Duplicate
+              </button>
             </li>
           ))}
         </ul>
