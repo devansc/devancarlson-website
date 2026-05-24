@@ -70,7 +70,7 @@ export function Setlists() {
     <div className="space-y-4">
       <div className="flex gap-2">
         <input
-          className="input max-w-xs"
+          className="input flex-1 min-w-0"
           placeholder="New setlist name…"
           value={name}
           onChange={(e) => setName(e.target.value)}

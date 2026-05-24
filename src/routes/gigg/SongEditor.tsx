@@ -356,7 +356,7 @@ export function SongEditor() {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-1">
           <label className="block text-xs uppercase tracking-wide text-neutral-500">
             Sections &amp; chords
           </label>
@@ -388,7 +388,7 @@ export function SongEditor() {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-1">
           <label className="block text-xs uppercase tracking-wide text-neutral-500">
             Form
           </label>
@@ -502,7 +502,7 @@ export function SongEditor() {
         </div>
         <div className="mt-3 flex gap-2">
           <input
-            className="input max-w-xs"
+            className="input flex-1 min-w-0"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             placeholder="New tag (e.g. 'solo', 'band-x')"

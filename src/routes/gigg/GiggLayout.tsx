@@ -3,7 +3,7 @@ import { NavLink, Outlet } from "react-router-dom";
 export function GiggLayout() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <div className="mb-6 flex items-baseline justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Gigg</h1>
           <p className="text-sm text-neutral-400">

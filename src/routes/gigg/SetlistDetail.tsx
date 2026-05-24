@@ -126,11 +126,11 @@ export function SetlistDetail() {
       <ol className="space-y-2">
         {songs.map((row, i) => (
           <li key={row.song.id} className="card flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-neutral-500 w-6 text-right">{i + 1}.</span>
-              <div>
-                <div className="font-medium">{row.song.title}</div>
-                <div className="text-xs text-neutral-400">{row.song.artist || "—"}</div>
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-neutral-500 w-6 shrink-0 text-right">{i + 1}.</span>
+              <div className="min-w-0">
+                <div className="font-medium truncate">{row.song.title}</div>
+                <div className="text-xs text-neutral-400 truncate">{row.song.artist || "—"}</div>
               </div>
             </div>
             <div className="flex gap-1">

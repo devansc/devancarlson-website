@@ -9,8 +9,10 @@ export function LoginButton({ className = "" }: { className?: string }) {
 
   if (user) {
     return (
-      <div className={`flex items-center gap-3 ${className}`}>
-        <span className="text-sm text-neutral-400">{user.email}</span>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <span className="hidden sm:inline text-sm text-neutral-400 truncate max-w-[180px]">
+          {user.email}
+        </span>
         <button className="btn-ghost" onClick={signOut}>
           Sign out
         </button>

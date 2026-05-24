@@ -67,42 +67,45 @@ export function SongList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          className="input max-w-xs"
-          placeholder="Search title or artist…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          className="input max-w-xs"
-          value={filterTag ?? ""}
-          onChange={(e) => setFilterTag(e.target.value || null)}
-        >
-          <option value="">All tags</option>
-          {tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input max-w-xs"
-          value={filterStatus}
-          onChange={(e) =>
-            setFilterStatus(e.target.value as SongStatus | "" | "none")
-          }
-        >
-          <option value="">All statuses</option>
-          <option value="learning">Learning</option>
-          <option value="working">Working</option>
-          <option value="gig-ready">Gig-ready</option>
-          <option value="none">No status</option>
-        </select>
-        <div className="grow" />
-        <Link to="/gigg/songs/new" className="btn-primary">
-          New song
-        </Link>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <input
+            className="input min-w-0 flex-1"
+            placeholder="Search title or artist…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <Link to="/gigg/songs/new" className="btn-primary shrink-0">
+            New song
+          </Link>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select
+            className="input flex-1"
+            value={filterTag ?? ""}
+            onChange={(e) => setFilterTag(e.target.value || null)}
+          >
+            <option value="">All tags</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input flex-1"
+            value={filterStatus}
+            onChange={(e) =>
+              setFilterStatus(e.target.value as SongStatus | "" | "none")
+            }
+          >
+            <option value="">All statuses</option>
+            <option value="learning">Learning</option>
+            <option value="working">Working</option>
+            <option value="gig-ready">Gig-ready</option>
+            <option value="none">No status</option>
+          </select>
+        </div>
       </div>
 
       {error && <div className="card border-red-900 text-sm text-red-300">{error}</div>}
@@ -116,13 +119,13 @@ export function SongList() {
             <li key={song.id}>
               <Link
                 to={`/gigg/songs/${song.id}`}
-                className="card flex items-center justify-between hover:border-neutral-700"
+                className="card flex items-center justify-between gap-3 hover:border-neutral-700"
               >
-                <div>
-                  <div className="font-medium">{song.title}</div>
-                  <div className="text-xs text-neutral-400">{song.artist || "—"}</div>
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{song.title}</div>
+                  <div className="truncate text-xs text-neutral-400">{song.artist || "—"}</div>
                 </div>
-                <div className="flex flex-wrap justify-end gap-1">
+                <div className="flex shrink-0 flex-wrap justify-end gap-1">
                   {song.status && (
                     <span className={`chip ${STATUS_CHIP[song.status]}`}>
                       {song.status}
