@@ -4,6 +4,8 @@
 // Regenerate later with `supabase gen types typescript` if you want full
 // end-to-end inference.
 
+export type SongStatus = "learning" | "working" | "gig-ready";
+
 export interface Song {
   id: string;
   user_id: string;
@@ -12,6 +14,8 @@ export interface Song {
   notes: string | null;
   lyrics: string | null;
   form: string[];
+  status: SongStatus | null;
+  reference_url: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -2,17 +2,24 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import type { Song, Tag } from "@/lib/database.types";
+import type { Song, SongStatus, Tag } from "@/lib/database.types";
 
 interface SongRow extends Song {
   song_tags: { tag: Tag }[];
 }
+
+const STATUS_CHIP: Record<SongStatus, string> = {
+  learning: "text-neutral-300",
+  working: "border-amber-700 text-amber-300",
+  "gig-ready": "border-emerald-700 text-emerald-300",
+};
 
 export function SongList() {
   const { user } = useAuth();
   const [songs, setSongs] = useState<SongRow[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<SongStatus | "" | "none">("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +50,11 @@ export function SongList() {
   const filtered = useMemo(() => {
     return songs.filter((s) => {
       if (filterTag && !s.song_tags.some((st) => st.tag.id === filterTag)) return false;
+      if (filterStatus === "none") {
+        if (s.status) return false;
+      } else if (filterStatus) {
+        if (s.status !== filterStatus) return false;
+      }
       if (query) {
         const q = query.toLowerCase();
         if (!s.title.toLowerCase().includes(q) && !(s.artist ?? "").toLowerCase().includes(q)) {
@@ -51,7 +63,7 @@ export function SongList() {
       }
       return true;
     });
-  }, [songs, filterTag, query]);
+  }, [songs, filterTag, filterStatus, query]);
 
   return (
     <div className="space-y-4">
@@ -73,6 +85,19 @@ export function SongList() {
               {t.name}
             </option>
           ))}
+        </select>
+        <select
+          className="input max-w-xs"
+          value={filterStatus}
+          onChange={(e) =>
+            setFilterStatus(e.target.value as SongStatus | "" | "none")
+          }
+        >
+          <option value="">All statuses</option>
+          <option value="learning">Learning</option>
+          <option value="working">Working</option>
+          <option value="gig-ready">Gig-ready</option>
+          <option value="none">No status</option>
         </select>
         <div className="grow" />
         <Link to="/gigg/songs/new" className="btn-primary">
@@ -98,6 +123,11 @@ export function SongList() {
                   <div className="text-xs text-neutral-400">{song.artist || "—"}</div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
+                  {song.status && (
+                    <span className={`chip ${STATUS_CHIP[song.status]}`}>
+                      {song.status}
+                    </span>
+                  )}
                   {song.song_tags.map((st) => (
                     <span key={st.tag.id} className="chip">
                       {st.tag.name}

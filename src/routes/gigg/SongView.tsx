@@ -99,13 +99,36 @@ export function SongView() {
             {song.artist}
           </div>
         )}
-        {!isGig && tags.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
+        {!isGig && (tags.length > 0 || song.status || song.reference_url) && (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {song.status && (
+              <span
+                className={`chip ${
+                  song.status === "gig-ready"
+                    ? "border-emerald-700 text-emerald-300"
+                    : song.status === "working"
+                      ? "border-amber-700 text-amber-300"
+                      : "text-neutral-300"
+                }`}
+              >
+                {song.status}
+              </span>
+            )}
             {tags.map((t) => (
               <span key={t.id} className="chip">
                 {t.name}
               </span>
             ))}
+            {song.reference_url && (
+              <a
+                href={song.reference_url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="chip hover:border-emerald-700"
+              >
+                Open reference ↗
+              </a>
+            )}
           </div>
         )}
       </div>

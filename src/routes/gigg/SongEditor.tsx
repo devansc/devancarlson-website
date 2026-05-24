@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import type { Section, Tag } from "@/lib/database.types";
+import type { Section, SongStatus, Tag } from "@/lib/database.types";
 import {
   parseFormText,
   parseSongText,
@@ -19,6 +19,8 @@ interface FormState {
   sectionsText: string;
   formText: string;
   tagIds: Set<string>;
+  status: SongStatus | "";
+  referenceUrl: string;
 }
 
 const EMPTY: FormState = {
@@ -29,7 +31,18 @@ const EMPTY: FormState = {
   sectionsText: "[Verse 1]\nC G Am F\n\n[Chorus]\nF C G Am\n",
   formText: "",
   tagIds: new Set(),
+  status: "",
+  referenceUrl: "",
 };
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export function SongEditor() {
   const { id } = useParams<{ id: string }>();
@@ -78,6 +91,8 @@ export function SongEditor() {
         ),
         formText: stringifyForm(song.form ?? []),
         tagIds: new Set((songTagsRes.data ?? []).map((r) => r.tag_id)),
+        status: (song.status as SongStatus | null) ?? "",
+        referenceUrl: song.reference_url ?? "",
       });
       setLoading(false);
     })();
@@ -97,10 +112,19 @@ export function SongEditor() {
     [sectionNames],
   );
 
+  const referenceUrlTrimmed = form.referenceUrl.trim();
+  const referenceUrlInvalid =
+    referenceUrlTrimmed.length > 0 && !isValidHttpUrl(referenceUrlTrimmed);
+
   const save = useCallback(async () => {
     if (!user) return;
     if (!form.title.trim()) {
       setError("Title is required.");
+      return;
+    }
+    const refUrl = form.referenceUrl.trim();
+    if (refUrl && !isValidHttpUrl(refUrl)) {
+      setError("Reference URL must start with http:// or https://");
       return;
     }
     setSaving(true);
@@ -117,6 +141,8 @@ export function SongEditor() {
           notes: form.notes || null,
           lyrics: form.lyrics || null,
           form: parsedForm,
+          status: form.status || null,
+          reference_url: refUrl || null,
         })
         .select("id")
         .single();
@@ -135,6 +161,8 @@ export function SongEditor() {
           notes: form.notes || null,
           lyrics: form.lyrics || null,
           form: parsedForm,
+          status: form.status || null,
+          reference_url: refUrl || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", songId!);
@@ -287,6 +315,43 @@ export function SongEditor() {
             onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
             placeholder="Artist (optional)"
           />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Status
+          </label>
+          <select
+            className="input"
+            value={form.status}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, status: e.target.value as SongStatus | "" }))
+            }
+          >
+            <option value="">— None —</option>
+            <option value="learning">Learning</option>
+            <option value="working">Working</option>
+            <option value="gig-ready">Gig-ready</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Reference URL
+          </label>
+          <input
+            className="input"
+            type="url"
+            value={form.referenceUrl}
+            onChange={(e) => setForm((f) => ({ ...f, referenceUrl: e.target.value }))}
+            placeholder="Spotify, YouTube, etc."
+          />
+          {referenceUrlInvalid && (
+            <div className="mt-1 text-xs text-red-300">
+              Must be an http:// or https:// URL.
+            </div>
+          )}
         </div>
       </div>
 

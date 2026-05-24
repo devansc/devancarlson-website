@@ -7,19 +7,31 @@ create extension if not exists "pgcrypto";
 
 -- Tables -------------------------------------------------------------------
 create table if not exists public.songs (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null references auth.users (id) on delete cascade,
-  title       text not null,
-  artist      text,
-  notes       text,
-  lyrics      text,
-  form        text[] not null default '{}',
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  title         text not null,
+  artist        text,
+  notes         text,
+  lyrics        text,
+  form          text[] not null default '{}',
+  status        text check (status in ('learning','working','gig-ready')),
+  reference_url text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
 );
 create index if not exists songs_user_id_idx on public.songs (user_id);
 -- Migration: add `form` to existing installs.
 alter table public.songs add column if not exists form text[] not null default '{}';
+-- Migration: add proficiency status + reference URL to existing installs.
+alter table public.songs add column if not exists status text;
+alter table public.songs add column if not exists reference_url text;
+-- Add status check constraint idempotently.
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'songs_status_check') then
+    alter table public.songs add constraint songs_status_check
+      check (status is null or status in ('learning','working','gig-ready'));
+  end if;
+end $$;
 
 create table if not exists public.sections (
   id        uuid primary key default gen_random_uuid(),
