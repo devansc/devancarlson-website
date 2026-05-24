@@ -18,6 +18,10 @@ interface FormState {
   lyrics: string;
   sectionsText: string;
   formText: string;
+  songKey: string;
+  tempo: string;
+  timeSig: string;
+  capo: string;
   tagIds: Set<string>;
 }
 
@@ -28,6 +32,10 @@ const EMPTY: FormState = {
   lyrics: "",
   sectionsText: "[Verse 1]\nC G Am F\n\n[Chorus]\nF C G Am\n",
   formText: "",
+  songKey: "",
+  tempo: "",
+  timeSig: "",
+  capo: "",
   tagIds: new Set(),
 };
 
@@ -77,6 +85,10 @@ export function SongEditor() {
           sections.map((s) => ({ name: s.name, chords: s.chords ?? [] })),
         ),
         formText: stringifyForm(song.form ?? []),
+        songKey: song.song_key ?? "",
+        tempo: song.tempo != null ? String(song.tempo) : "",
+        timeSig: song.time_sig ?? "",
+        capo: song.capo != null ? String(song.capo) : "",
         tagIds: new Set((songTagsRes.data ?? []).map((r) => r.tag_id)),
       });
       setLoading(false);
@@ -106,6 +118,17 @@ export function SongEditor() {
     setSaving(true);
     setError(null);
 
+    const parseIntOrNull = (s: string): number | null => {
+      const n = parseInt(s.trim(), 10);
+      return Number.isFinite(n) ? n : null;
+    };
+    const metadata = {
+      song_key: form.songKey.trim() || null,
+      tempo: parseIntOrNull(form.tempo),
+      time_sig: form.timeSig.trim() || null,
+      capo: parseIntOrNull(form.capo),
+    };
+
     let songId = id;
     if (isNew) {
       const { data, error } = await supabase
@@ -117,6 +140,7 @@ export function SongEditor() {
           notes: form.notes || null,
           lyrics: form.lyrics || null,
           form: parsedForm,
+          ...metadata,
         })
         .select("id")
         .single();
@@ -135,6 +159,7 @@ export function SongEditor() {
           notes: form.notes || null,
           lyrics: form.lyrics || null,
           form: parsedForm,
+          ...metadata,
           updated_at: new Date().toISOString(),
         })
         .eq("id", songId!);
@@ -286,6 +311,55 @@ export function SongEditor() {
             value={form.artist}
             onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))}
             placeholder="Artist (optional)"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Key
+          </label>
+          <input
+            className="input"
+            value={form.songKey}
+            onChange={(e) => setForm((f) => ({ ...f, songKey: e.target.value }))}
+            placeholder="e.g. G, Am"
+          />
+        </div>
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Tempo (BPM)
+          </label>
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.tempo}
+            onChange={(e) => setForm((f) => ({ ...f, tempo: e.target.value }))}
+            placeholder="120"
+          />
+        </div>
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Time signature
+          </label>
+          <input
+            className="input"
+            value={form.timeSig}
+            onChange={(e) => setForm((f) => ({ ...f, timeSig: e.target.value }))}
+            placeholder="4/4"
+          />
+        </div>
+        <div>
+          <label className="block text-xs uppercase tracking-wide text-neutral-500 mb-1">
+            Capo (fret)
+          </label>
+          <input
+            className="input"
+            inputMode="numeric"
+            value={form.capo}
+            onChange={(e) => setForm((f) => ({ ...f, capo: e.target.value }))}
+            placeholder="0"
           />
         </div>
       </div>

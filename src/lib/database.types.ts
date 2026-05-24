@@ -12,6 +12,10 @@ export interface Song {
   notes: string | null;
   lyrics: string | null;
   form: string[];
+  song_key: string | null;
+  tempo: number | null;
+  time_sig: string | null;
+  capo: number | null;
   created_at: string;
   updated_at: string;
 }

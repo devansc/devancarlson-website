@@ -94,7 +94,14 @@ export function SongList() {
                 className="card flex items-center justify-between hover:border-neutral-700"
               >
                 <div>
-                  <div className="font-medium">{song.title}</div>
+                  <div className="font-medium">
+                    {song.title}
+                    {song.song_key && (
+                      <span className="ml-2 text-xs font-mono text-neutral-500">
+                        {song.song_key}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-neutral-400">{song.artist || "—"}</div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">

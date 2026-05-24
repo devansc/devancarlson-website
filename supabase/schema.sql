@@ -14,12 +14,20 @@ create table if not exists public.songs (
   notes       text,
   lyrics      text,
   form        text[] not null default '{}',
+  song_key    text,
+  tempo       int,
+  time_sig    text,
+  capo        int,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 create index if not exists songs_user_id_idx on public.songs (user_id);
--- Migration: add `form` to existing installs.
-alter table public.songs add column if not exists form text[] not null default '{}';
+-- Migrations: add columns to existing installs.
+alter table public.songs add column if not exists form     text[] not null default '{}';
+alter table public.songs add column if not exists song_key text;
+alter table public.songs add column if not exists tempo    int;
+alter table public.songs add column if not exists time_sig text;
+alter table public.songs add column if not exists capo     int;
 
 create table if not exists public.sections (
   id        uuid primary key default gen_random_uuid(),

@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { Section, Song, Tag } from "@/lib/database.types";
 import { sectionAbbrev } from "./songParser";
+import { formatOffset, transposeChord, transposeKey } from "./transpose";
 
 type ViewMode = "practice" | "gig";
 
@@ -18,6 +19,7 @@ export function SongView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<ViewMode>("practice");
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -99,6 +101,68 @@ export function SongView() {
             {song.artist}
           </div>
         )}
+
+        {/* Metadata row: key (with transpose arrow), tempo, time sig, capo. */}
+        <div
+          className={`mt-2 flex flex-wrap items-center gap-1 ${
+            isGig ? "text-lg" : "text-xs"
+          }`}
+        >
+          {song.song_key && (
+            <span className="chip">
+              Key {song.song_key}
+              {offset !== 0 && (
+                <>
+                  {" → "}
+                  <span className="text-emerald-300">
+                    {transposeKey(song.song_key, offset)}
+                  </span>
+                </>
+              )}
+            </span>
+          )}
+          {song.tempo != null && <span className="chip">{song.tempo} BPM</span>}
+          {song.time_sig && <span className="chip">{song.time_sig}</span>}
+          {song.capo != null && song.capo > 0 && (
+            <span className="chip">Capo {song.capo}</span>
+          )}
+        </div>
+
+        {/* Transpose control. */}
+        <div
+          className={`mt-2 flex flex-wrap items-center gap-1 ${
+            isGig ? "text-lg" : "text-xs"
+          }`}
+        >
+          <span className="text-neutral-500 mr-1">Transpose</span>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setOffset((o) => o - 1)}
+            aria-label="Transpose down"
+          >
+            −
+          </button>
+          <span className="font-mono w-8 text-center">{formatOffset(offset)}</span>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setOffset((o) => o + 1)}
+            aria-label="Transpose up"
+          >
+            +
+          </button>
+          {offset !== 0 && (
+            <button
+              type="button"
+              className="btn-ghost text-neutral-400"
+              onClick={() => setOffset(0)}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+
         {!isGig && tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {tags.map((t) => (
@@ -156,7 +220,7 @@ export function SongView() {
             >
               {(s.chords ?? []).map((c, j) => (
                 <span key={j} className="chip text-emerald-300">
-                  {c}
+                  {transposeChord(c, offset)}
                 </span>
               ))}
             </div>
