@@ -246,8 +246,8 @@ export function SongEditor() {
   };
 
   const fetchLyrics = async () => {
-    if (!form.title.trim()) {
-      setError("Enter a title (and ideally artist) before fetching lyrics.");
+    if (!form.title.trim() || !form.artist.trim()) {
+      setError("Enter both a title and artist before fetching lyrics.");
       return;
     }
     setFetchingLyrics(true);
