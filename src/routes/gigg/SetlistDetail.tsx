@@ -20,6 +20,8 @@ export function SetlistDetail() {
   const [addSongId, setAddSongId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   const load = async () => {
     if (!id || !user) return;
@@ -61,23 +63,31 @@ export function SetlistDetail() {
     load();
   };
 
-  const move = async (index: number, dir: -1 | 1) => {
-    const j = index + dir;
-    if (j < 0 || j >= songs.length || !id) return;
-    const a = songs[index];
-    const b = songs[j];
-    // Swap positions
-    await supabase
-      .from("setlist_songs")
-      .update({ position: b.position })
-      .eq("setlist_id", id)
-      .eq("song_id", a.song.id);
-    await supabase
-      .from("setlist_songs")
-      .update({ position: a.position })
-      .eq("setlist_id", id)
-      .eq("song_id", b.song.id);
-    load();
+  // Reorder by moving the song at `from` to position `to`. Persists by
+  // rewriting each row's position; only rows whose position changes are
+  // updated. Optimistic local update for a snappy UX.
+  const reorder = async (from: number, to: number) => {
+    if (!id || from === to || from < 0 || to < 0) return;
+    if (from >= songs.length || to >= songs.length) return;
+    const next = songs.slice();
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    // Reassign positions: 0..n-1.
+    const renumbered = next.map((row, i) => ({ ...row, position: i }));
+    setSongs(renumbered);
+
+    const updates = renumbered
+      .map((row, i) => ({ song_id: row.song.id, old: songs[songs.findIndex((s) => s.song.id === row.song.id)].position, position: i }))
+      .filter((u) => u.old !== u.position);
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from("setlist_songs")
+          .update({ position: u.position })
+          .eq("setlist_id", id)
+          .eq("song_id", u.song_id),
+      ),
+    );
   };
 
   const removeSong = async (songId: string) => {
@@ -114,35 +124,66 @@ export function SetlistDetail() {
       {error && <div className="card border-red-900 text-sm text-red-300">{error}</div>}
 
       <ol className="space-y-2">
-        {songs.map((row, i) => (
-          <li key={row.song.id} className="card flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-neutral-500 w-6 text-right">{i + 1}.</span>
-              <div>
-                <div className="font-medium">{row.song.title}</div>
-                <div className="text-xs text-neutral-400">{row.song.artist || "—"}</div>
+        {songs.map((row, i) => {
+          const isDragging = dragIndex === i;
+          const isOver = overIndex === i && dragIndex !== null && dragIndex !== i;
+          return (
+            <li
+              key={row.song.id}
+              draggable
+              onDragStart={(e) => {
+                setDragIndex(i);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (overIndex !== i) setOverIndex(i);
+              }}
+              onDragLeave={() => {
+                if (overIndex === i) setOverIndex(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex !== null && dragIndex !== i) {
+                  reorder(dragIndex, i);
+                }
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              className={`card flex items-center justify-between gap-2 ${
+                isDragging ? "opacity-50" : ""
+              } ${isOver ? "border-emerald-700" : ""}`}
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="cursor-grab select-none text-neutral-500"
+                  title="Drag to reorder"
+                  aria-hidden
+                >
+                  ⠿
+                </span>
+                <span className="text-neutral-500 w-6 text-right">{i + 1}.</span>
+                <div>
+                  <div className="font-medium">{row.song.title}</div>
+                  <div className="text-xs text-neutral-400">{row.song.artist || "—"}</div>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-1">
-              <button className="btn-ghost" onClick={() => move(i, -1)} disabled={i === 0}>
-                ↑
-              </button>
-              <button
-                className="btn-ghost"
-                onClick={() => move(i, 1)}
-                disabled={i === songs.length - 1}
-              >
-                ↓
-              </button>
-              <button
-                className="btn-ghost text-red-300 hover:bg-red-950/40"
-                onClick={() => removeSong(row.song.id)}
-              >
-                Remove
-              </button>
-            </div>
-          </li>
-        ))}
+              <div className="flex gap-1">
+                <button
+                  className="btn-ghost text-red-300 hover:bg-red-950/40"
+                  onClick={() => removeSong(row.song.id)}
+                >
+                  Remove
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ol>
 
       <div className="card flex gap-2">
