@@ -58,3 +58,45 @@ export function stringifySections(sections: ParsedSection[]): string {
     .map((s) => `[${s.name}]\n${s.chords.join(" ")}`)
     .join("\n\n");
 }
+
+// --- Song form helpers ----------------------------------------------------
+//
+// A song's "form" is the playback order of its sections, e.g.
+//   ["Verse", "Verse", "Chorus", "Bridge", "Verse", "Chorus"]
+// Sections themselves are unique (Verse defined once, with its chords);
+// the form references them by name (case-insensitive match).
+
+// Parse a comma- or whitespace-separated form string into an array of names,
+// normalising each name to the canonical case from `knownSections` when possible.
+export function parseFormText(text: string, knownSections: string[] = []): string[] {
+  const lookup = new Map(knownSections.map((n) => [n.toLowerCase(), n]));
+  return text
+    .split(/[,\n]+|\s{2,}/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => lookup.get(s.toLowerCase()) ?? s);
+}
+
+export function stringifyForm(form: string[]): string {
+  return form.join(", ");
+}
+
+// Short label for a section name, used in compact form display.
+//   "Verse 1"     -> "V1"
+//   "Pre-Chorus"  -> "PC"
+//   "Chorus"      -> "C"
+//   "Solo"        -> "S"
+//   "Drum Break"  -> "DB"
+export function sectionAbbrev(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  // Split on whitespace + hyphen to catch "Pre-Chorus".
+  const parts = trimmed.split(/[\s\-_]+/).filter(Boolean);
+  const letters = parts.map((p) => p[0]?.toUpperCase() ?? "").join("");
+  // Append a trailing number if the last word looks like one ("Verse 1" -> "V1").
+  const lastNum = trimmed.match(/(\d+)\s*$/);
+  if (lastNum && !/\d/.test(letters)) {
+    return letters + lastNum[1];
+  }
+  return letters || trimmed.slice(0, 2).toUpperCase();
+}

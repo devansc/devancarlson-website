@@ -3,7 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import type { Section, Tag } from "@/lib/database.types";
-import { parseSongText, stringifySections } from "./songParser";
+import {
+  parseFormText,
+  parseSongText,
+  sectionAbbrev,
+  stringifyForm,
+  stringifySections,
+} from "./songParser";
 
 interface FormState {
   title: string;
@@ -11,6 +17,7 @@ interface FormState {
   notes: string;
   lyrics: string;
   sectionsText: string;
+  formText: string;
   tagIds: Set<string>;
 }
 
@@ -20,6 +27,7 @@ const EMPTY: FormState = {
   notes: "",
   lyrics: "",
   sectionsText: "[Verse 1]\nC G Am F\n\n[Chorus]\nF C G Am\n",
+  formText: "",
   tagIds: new Set(),
 };
 
@@ -68,6 +76,7 @@ export function SongEditor() {
         sectionsText: stringifySections(
           sections.map((s) => ({ name: s.name, chords: s.chords ?? [] })),
         ),
+        formText: stringifyForm(song.form ?? []),
         tagIds: new Set((songTagsRes.data ?? []).map((r) => r.tag_id)),
       });
       setLoading(false);
@@ -78,6 +87,15 @@ export function SongEditor() {
   }, [id, isNew, user]);
 
   const parsedSections = useMemo(() => parseSongText(form.sectionsText), [form.sectionsText]);
+  const sectionNames = useMemo(() => parsedSections.map((s) => s.name), [parsedSections]);
+  const parsedForm = useMemo(
+    () => parseFormText(form.formText, sectionNames),
+    [form.formText, sectionNames],
+  );
+  const sectionNameSet = useMemo(
+    () => new Set(sectionNames.map((n) => n.toLowerCase())),
+    [sectionNames],
+  );
 
   const save = useCallback(async () => {
     if (!user) return;
@@ -98,6 +116,7 @@ export function SongEditor() {
           artist: form.artist.trim() || null,
           notes: form.notes || null,
           lyrics: form.lyrics || null,
+          form: parsedForm,
         })
         .select("id")
         .single();
@@ -115,6 +134,7 @@ export function SongEditor() {
           artist: form.artist.trim() || null,
           notes: form.notes || null,
           lyrics: form.lyrics || null,
+          form: parsedForm,
           updated_at: new Date().toISOString(),
         })
         .eq("id", songId!);
@@ -153,7 +173,8 @@ export function SongEditor() {
 
     setSaving(false);
     if (isNew) navigate(`/gigg/songs/${songId}`, { replace: true });
-  }, [user, id, isNew, form, parsedSections, navigate]);
+    else navigate(`/gigg/songs/${songId}`);
+  }, [user, id, isNew, form, parsedSections, parsedForm, navigate]);
 
   const remove = async () => {
     if (!id) return;
@@ -224,8 +245,11 @@ export function SongEditor() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-2">
-        <button className="btn-ghost" onClick={() => navigate("/gigg")}>
-          ← Back
+        <button
+          className="btn-ghost"
+          onClick={() => navigate(isNew ? "/gigg" : `/gigg/songs/${id}`)}
+        >
+          ← {isNew ? "Back" : "Cancel"}
         </button>
         <div className="flex gap-2">
           {!isNew && (
@@ -294,6 +318,63 @@ export function SongEditor() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs uppercase tracking-wide text-neutral-500">
+            Form
+          </label>
+          <span className="text-xs text-neutral-500">
+            Play order, e.g. <code>Verse 1, Verse 1, Chorus, Bridge, Verse 1, Chorus</code>
+          </span>
+        </div>
+        <input
+          className="input font-mono"
+          value={form.formText}
+          onChange={(e) => setForm((f) => ({ ...f, formText: e.target.value }))}
+          placeholder="Comma-separated section names…"
+        />
+        {parsedForm.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1">
+            {parsedForm.map((name, i) => {
+              const known = sectionNameSet.has(name.toLowerCase());
+              return (
+                <span
+                  key={i}
+                  className={`chip font-mono ${known ? "text-emerald-300" : "border-red-900 text-red-300"}`}
+                  title={known ? name : `${name} — no matching section`}
+                >
+                  {sectionAbbrev(name)}
+                </span>
+              );
+            })}
+          </div>
+        )}
+        {parsedSections.length > 0 && (
+          <div className="mt-3">
+            <div className="text-xs text-neutral-500 mb-1">Click to append:</div>
+            <div className="flex flex-wrap gap-1">
+              {parsedSections.map((s) => (
+                <button
+                  key={s.name}
+                  type="button"
+                  className="chip cursor-pointer hover:border-emerald-700"
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      formText: f.formText.trim()
+                        ? `${f.formText.replace(/[\s,]+$/, "")}, ${s.name}`
+                        : s.name,
+                    }))
+                  }
+                >
+                  + {s.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

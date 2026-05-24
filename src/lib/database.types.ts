@@ -11,6 +11,7 @@ export interface Song {
   artist: string | null;
   notes: string | null;
   lyrics: string | null;
+  form: string[];
   created_at: string;
   updated_at: string;
 }

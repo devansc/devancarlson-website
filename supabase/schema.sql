@@ -13,10 +13,13 @@ create table if not exists public.songs (
   artist      text,
   notes       text,
   lyrics      text,
+  form        text[] not null default '{}',
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 create index if not exists songs_user_id_idx on public.songs (user_id);
+-- Migration: add `form` to existing installs.
+alter table public.songs add column if not exists form text[] not null default '{}';
 
 create table if not exists public.sections (
   id        uuid primary key default gen_random_uuid(),

@@ -5,6 +5,7 @@ import { Home } from "./routes/home/Home";
 import { GiggLayout } from "./routes/gigg/GiggLayout";
 import { SongList } from "./routes/gigg/SongList";
 import { SongEditor } from "./routes/gigg/SongEditor";
+import { SongView } from "./routes/gigg/SongView";
 import { Setlists } from "./routes/gigg/Setlists";
 import { SetlistDetail } from "./routes/gigg/SetlistDetail";
 
@@ -23,7 +24,8 @@ export default function App() {
         >
           <Route index element={<SongList />} />
           <Route path="songs/new" element={<SongEditor />} />
-          <Route path="songs/:id" element={<SongEditor />} />
+          <Route path="songs/:id" element={<SongView />} />
+          <Route path="songs/:id/edit" element={<SongEditor />} />
           <Route path="setlists" element={<Setlists />} />
           <Route path="setlists/:id" element={<SetlistDetail />} />
         </Route>
