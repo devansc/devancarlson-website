@@ -98,24 +98,55 @@ function pickBestHit(
 
 // Genius lyrics live inside elements with `data-lyrics-container="true"`.
 // Within them, <br> separates lines and other tags can be stripped.
+// We track nested <div> depth to find the true closing tag instead of
+// stopping at the first inner </div> (which would cut off verse content).
 function extractLyrics(html: string): string | null {
-  const containerRe = /<div[^>]*data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/g;
   const chunks: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = containerRe.exec(html)) !== null) {
-    chunks.push(match[1]);
+  let searchFrom = 0;
+
+  while (true) {
+    const markerIdx = html.indexOf('data-lyrics-container="true"', searchFrom);
+    if (markerIdx === -1) break;
+
+    const openingClose = html.indexOf('>', markerIdx);
+    if (openingClose === -1) break;
+
+    let depth = 1;
+    let pos = openingClose + 1;
+
+    while (pos < html.length && depth > 0) {
+      const nextOpen = html.indexOf('<div', pos);
+      const nextClose = html.indexOf('</div', pos);
+
+      if (nextClose === -1) { pos = html.length; break; }
+
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        depth++;
+        pos = nextOpen + 4;
+      } else {
+        depth--;
+        if (depth === 0) chunks.push(html.slice(openingClose + 1, nextClose));
+        pos = nextClose + 5;
+      }
+    }
+
+    searchFrom = openingClose + 1;
   }
+
   if (chunks.length === 0) return null;
   const joined = chunks.join("\n");
   const text = joined
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<[^>]+>/g, "")
+    .replace(/&#x([0-9a-fA-F]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/^\d+\s+Contributors[^\[]*/, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return text || null;
